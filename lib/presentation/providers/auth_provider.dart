@@ -11,17 +11,41 @@ class AuthProvider extends ChangeNotifier {
   User? _user;
   Teacher? _teacher;
   bool _isLoading = false;
+  bool _isInitialized = false; // Add this to track initialization
 
   User? get user => _user;
   Teacher? get teacher => _teacher;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _user != null;
+  bool get isInitialized => _isInitialized; // Expose initialization state
 
   AuthProvider() {
+    _initializeAuth();
+  }
+
+  // Initialize auth state and listen for changes
+  Future<void> _initializeAuth() async {
+    _isLoading = true;
+    notifyListeners();
+
+    // Get current user immediately
+    _user = _auth.currentUser;
+
+    if (_user != null) {
+      await _loadTeacherProfile();
+    }
+
+    _isInitialized = true;
+    _isLoading = false;
+    notifyListeners();
+
+    // Listen for auth state changes
     _auth.authStateChanges().listen(_onAuthStateChanged);
   }
 
   Future<void> _onAuthStateChanged(User? user) async {
+    if (_user?.uid == user?.uid) return; // Avoid unnecessary updates
+
     _user = user;
     if (user != null) {
       await _loadTeacherProfile();
@@ -38,6 +62,11 @@ class AuthProvider extends ChangeNotifier {
       final doc = await _firestore.collection('teachers').doc(_user!.uid).get();
       if (doc.exists) {
         _teacher = Teacher.fromMap(doc.data()!);
+
+        // Update last active timestamp
+        await _firestore.collection('teachers').doc(_user!.uid).update({
+          'lastActiveAt': FieldValue.serverTimestamp(),
+        });
       }
     } catch (e) {
       print('Error loading teacher profile: $e');
@@ -117,6 +146,26 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    await _auth.signOut();
+    try {
+      await _auth.signOut();
+      _user = null;
+      _teacher = null;
+      notifyListeners();
+    } catch (e) {
+      print('Error signing out: $e');
+    }
+  }
+
+
+  // Method to check if user setup is complete
+  bool get isSetupComplete {
+    if (_teacher == null) return false;
+
+    // Check if all required onboarding fields are filled
+    return _teacher!.classesHandling.isNotEmpty &&
+        _teacher!.subjects.isNotEmpty &&
+        _teacher!.syllabusType.isNotEmpty &&
+        _teacher!.medium.isNotEmpty &&
+        _teacher!.schoolContext.isNotEmpty;
   }
 }

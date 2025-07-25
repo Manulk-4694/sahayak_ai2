@@ -44,15 +44,13 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     }
 
-    if (success && mounted) {
-      if (authProvider.teacher?.classesHandling.isEmpty ?? true) {
-        Navigator.of(context).pushReplacementNamed('/onboarding');
-      } else {
-        Navigator.of(context).pushReplacementNamed('/dashboard');
-      }
-    } else if (mounted) {
+    // Remove manual navigation - AuthWrapper will handle it automatically
+    if (!success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_isSignUp ? 'Sign up failed' : 'Login failed')),
+        SnackBar(
+          content: Text(_isSignUp ? 'Sign up failed' : 'Login failed'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -189,7 +187,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       child: authProvider.isLoading
-                          ? const CircularProgressIndicator()
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : Text(_isSignUp ? 'Sign Up' : 'Sign In'),
                     ),
 
@@ -197,7 +199,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     // Toggle Sign In/Up
                     TextButton(
-                      onPressed: () => setState(() => _isSignUp = !_isSignUp),
+                      onPressed: authProvider.isLoading
+                          ? null
+                          : () => setState(() => _isSignUp = !_isSignUp),
                       child: Text(
                         _isSignUp
                             ? 'Already have an account? Sign In'
