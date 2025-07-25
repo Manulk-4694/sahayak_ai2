@@ -8,6 +8,8 @@ import 'package:sahayak_ai2/presentation/providers/ai_assistant_provider.dart';
 import 'package:sahayak_ai2/presentation/providers/auth_provider.dart';
 import 'package:sahayak_ai2/presentation/providers/lesson_provider.dart';
 import 'package:sahayak_ai2/presentation/providers/morningPrep_provider.dart';
+import 'package:sahayak_ai2/presentation/providers/theme_provider.dart';
+import 'package:sahayak_ai2/presentation/screens/auth/auth_wrapper.dart';
 import 'package:sahayak_ai2/presentation/screens/auth/login_screen.dart';
 import 'package:sahayak_ai2/presentation/screens/home/dashboard_screen.dart';
 import 'package:sahayak_ai2/presentation/screens/onboarding/onboarding_screen.dart';
@@ -29,23 +31,39 @@ class SahayakApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => AIAssistantProvider()),
         // ChangeNotifierProvider(create: (_) => TeacherProvider()),
         ChangeNotifierProvider(create: (_) => LessonProvider()),
         ChangeNotifierProvider(create: (_) => MorningPrepProvider()),
       ],
-      child: MaterialApp(
-        title: 'Sahayak - Teacher Assistant',
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        home: const SplashScreen(),
-        routes: {
-          '/login': (context) => const LoginScreen(),
-          '/onboarding': (context) => const OnboardingScreen(),
-          '/dashboard': (context) => const DashboardScreen(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          // Show loading screen while theme is initializing
+          if (!themeProvider.isInitialized) {
+            return MaterialApp(
+              home: const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              ),
+              theme: AppThemes.lightTheme,
+            );
+          }
+
+          return MaterialApp(
+            title: 'Sahayak AI',
+            theme: AppThemes.lightTheme,
+            darkTheme: AppThemes.darkTheme,
+            themeMode: themeProvider.themeMode,
+            // Use AuthWrapper as home instead of specific screens
+            home: const AuthWrapper(),
+            routes: {
+              '/login': (context) => const LoginScreen(),
+              '/onboarding': (context) => const OnboardingScreen(),
+              '/dashboard': (context) => const DashboardScreen(),
+            },
+          );
         },
-        debugShowCheckedModeBanner: false,
       ),
     );
   }
