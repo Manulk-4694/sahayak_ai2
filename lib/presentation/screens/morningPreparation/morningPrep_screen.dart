@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sahayak_ai2/data/models/lesson/enhanced_lesson_plan.dart';
+import 'package:sahayak_ai2/data/models/morningPrep/morningPrep_model.dart';
 // import 'package:intl/intl.dart'; // Ensure this import is present for DateFormat
 import 'package:sahayak_ai2/presentation/widgets/error_widget.dart';
 import 'package:sahayak_ai2/presentation/widgets/loading_widget.dart';
@@ -144,7 +145,7 @@ class _MorningPrepScreenState extends State<MorningPrepScreen>
             const SizedBox(height: 16),
 
             // Quick tips
-            _buildQuickTipsCard(context, morningPrep.quickTips),
+            _buildQuickTipsCard(context, morningPrep.aiTips.map((tip) => tip.title).toList()),
             const SizedBox(height: 16),
 
             // Today's lessons preview
